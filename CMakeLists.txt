@@ -22,8 +22,8 @@ add_definitions(
 
 add_executable(fractal 
 	src/main.cpp
-	#src/shader.cpp
-	#src/shader.hpp
+	src/loader.cpp
+	src/loader.hpp
 )
 
 target_link_libraries(fractal
