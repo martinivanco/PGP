@@ -83,17 +83,31 @@ int main( void ) {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	glUseProgram(programID);
-	GLuint resID = glGetUniformLocation(programID, "resolution");
-	GLuint timeID = glGetUniformLocation(programID, "time");
+	GLuint camID = glGetUniformLocation(programID, "cameraPosition");
+	GLuint tlID = glGetUniformLocation(programID, "tlCoord");
+	GLuint xStepID = glGetUniformLocation(programID, "xStep");
+	GLuint yStepID = glGetUniformLocation(programID, "yStep");
 
 	std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
 	do {
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glUseProgram(programID);
-		glUniform2f(resID, 800, 600);
 		std::chrono::duration<double> diff = std::chrono::system_clock::now() - start;
-		glUniform1f(timeID, diff.count() * 0.1);
+		float modelTime = diff.count() * 0.2;
+
+		float z = -sin(modelTime * 0.5) * 2.0;
+		vec3 camPos = vec3(cos(modelTime) * 2.0, z, sin(modelTime) * 2.0);
+	  	glUniform3f(camID, camPos.x, camPos.y, camPos.z);
+		vec3 normal = normalize(-camPos);
+		float distance = 1.25 + sin(modelTime) * 0.75;
+		vec3 left = normalize(cross(vec3(0, 1, 0), normal)); left *= distance;
+		vec3 up = normalize(cross(normal, left)); up *= distance;
+		vec3 topLeft = left; topLeft *= (4.0 / 3.0); topLeft += up - camPos;
+		glUniform3f(tlID, topLeft.x, topLeft.y, topLeft.z);
+		glUniform3f(xStepID, -left.x, -left.y, -left.z);
+		glUniform3f(yStepID, -up.x, -up.y, -up.z);
+		
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
