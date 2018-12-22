@@ -12,6 +12,7 @@ const float MAX_DIST = 10.0;
 const float EPSILON = 0.001;
 const vec3 LIGHT1 = vec3(0.577, 0.577, -0.577);
 const vec3 LIGHT2 = vec3(-0.707, 0.000, 0.707);
+#define ANTI_ALIASING 2
 
 float mandelbulbSDF(in vec3 c, out vec4 color) {
     vec3 w = c;
@@ -81,11 +82,12 @@ float raymarch(in vec3 ray, out vec4 color) {
     return MAX_DIST + 1;
 }
 
-void main() {
+vec3 render(in vec2 coord) {
     // Intersect mandelbulb
-    vec3 ray = normalize(tlCoord + pixelPosition.x / 300.0 * xStep + pixelPosition.y / 300.0 * yStep);
+    vec3 ray = normalize(tlCoord + coord.x / 300.0 * xStep + coord.y / 300.0 * yStep);
     vec4 trap;
     float t = raymarch(ray, trap);
+    vec3 color;
 
     // Coloring
     if(t >= MAX_DIST) {
@@ -123,5 +125,17 @@ void main() {
     }
 
     // Gamma correction
-    color = pow(color, vec3(0.59375));
+    return pow(color, vec3(0.59375));
+}
+
+void main() {
+#if ANTI_ALIASING < 2
+    color = render(pixelPosition);
+#else
+    color = vec3(0.0);
+    for(int j = 0; j < ANTI_ALIASING; j++) {
+        for(int i = 0; i < ANTI_ALIASING; i++) color += render(pixelPosition + (vec2(i,j) / float(ANTI_ALIASING)));
+    }
+	color /= float(ANTI_ALIASING * ANTI_ALIASING);
+#endif
 }
